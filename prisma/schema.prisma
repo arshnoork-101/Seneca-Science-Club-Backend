@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  senecaId  String   @unique
+  firstName String
+  lastName  String
+  program   String
+  year      Int
+  password  String
+  role      Role     @default(MEMBER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  eventRegistrations EventRegistration[]
+  blogPosts         BlogPost[]
+  testimonials      Testimonial[]
+
+  @@map("users")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  startTime   String
+  endTime     String
+  location    String
+  maxCapacity Int?
+  currentCapacity Int @default(0)
+  imageUrl    String?
+  category    EventCategory
+  status      EventStatus @default(UPCOMING)
+  isOngoing   Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  registrations EventRegistration[]
+  galleryItems GalleryItem[]
+
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  status    RegistrationStatus @default(CONFIRMED)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("event_registrations")
+}
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  excerpt   String
+  authorId  String
+  imageUrl  String?
+  tags      String[]
+  isPublished Boolean @default(false)
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("blog_posts")
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  videoUrl    String?
+  category    GalleryCategory
+  eventId     String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+
+  // Relations
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@map("gallery_items")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  role        String
+  bio         String
+  imageUrl    String
+  linkedinUrl String?
+  instagramUrl String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("team_members")
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  rating    Int      @default(5)
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("testimonials")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum EventCategory {
+  WORKSHOP
+  LECTURE
+  SOCIAL
+  COMPETITION
+  FIELD_TRIP
+  CONFERENCE
+  OTHER
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+enum GalleryCategory {
+  EVENTS
+  WORKSHOPS
+  SOCIALS
+  COMPETITIONS
+  FIELD_TRIPS
+  OTHER
+}
