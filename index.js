@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-vercel-frontend-url.vercel.app', 'https://senecascienceclub.com'] 
+    ? ['https://seneca-science-club-frontend-dkp1.vercel.app'] 
     : ['http://localhost:4200', 'http://localhost:3000'],
   credentials: true
 }));
