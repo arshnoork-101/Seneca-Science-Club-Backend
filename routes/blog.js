@@ -110,6 +110,84 @@ router.post('/', auth, [
   }
 });
 
+// Create new blog post with access code (Simplified for frontend)
+router.post('/simple', [
+  body('title').trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),
+  body('content').trim().isLength({ min: 10 }).withMessage('Content must be at least 10 characters'),
+  body('excerpt').trim().isLength({ min: 10, max: 300 }).withMessage('Excerpt must be 10-300 characters'),
+  body('tags').isArray({ min: 1 }).withMessage('At least one tag is required'),
+  body('author').notEmpty().withMessage('Author is required'),
+  body('accessCode').notEmpty().withMessage('Access code is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { title, content, excerpt, tags, imageUrl, author, accessCode } = req.body;
+    
+    // Verify access code
+    const validCode = process.env.MENTOR_ACCESS_CODE || 'SSC2024MENTOR';
+    if (accessCode !== validCode) {
+      return res.status(401).json({ error: 'Invalid access code' });
+    }
+
+    // Parse author name
+    const authorParts = author.firstName && author.lastName 
+      ? author 
+      : { firstName: author.split(' ')[0] || 'Anonymous', lastName: author.split(' ').slice(1).join(' ') || '' };
+
+    // Create a default user if none exists (for simplified posting)
+    let defaultUser = await prisma.user.findFirst({
+      where: { email: 'mentor@ssc.com' }
+    });
+
+    if (!defaultUser) {
+      defaultUser = await prisma.user.create({
+        data: {
+          firstName: authorParts.firstName,
+          lastName: authorParts.lastName,
+          email: 'mentor@ssc.com',
+          senecaId: 'MENTOR001',
+          program: 'Science Club',
+          year: 1,
+          password: 'placeholder',
+          role: 'ADMIN',
+          isActive: true
+        }
+      });
+    }
+
+    const post = await prisma.blogPost.create({
+      data: {
+        title,
+        content,
+        excerpt,
+        tags,
+        imageUrl,
+        authorId: defaultUser.id,
+        isPublished: true,
+        publishedAt: new Date()
+      },
+      include: {
+        author: {
+          select: {
+            firstName: true,
+            lastName: true,
+            program: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json(post);
+  } catch (error) {
+    console.error('Error creating blog post:', error);
+    res.status(500).json({ error: 'Failed to create blog post' });
+  }
+});
+
 // Update blog post (Author or Admin)
 router.put('/:id', auth, [
   body('title').optional().trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),

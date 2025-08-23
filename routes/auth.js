@@ -320,6 +320,28 @@ router.post('/reset-password', [
   }
 });
 
+// Verify access code for blog posting
+router.post('/verify-code', [
+  body('accessCode').notEmpty().withMessage('Access code is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { accessCode } = req.body;
+    const validCode = process.env.MENTOR_ACCESS_CODE || 'SSC2024MENTOR';
+    
+    const isValid = accessCode === validCode;
+    
+    res.json({ valid: isValid });
+  } catch (error) {
+    console.error('Error verifying access code:', error);
+    res.status(500).json({ error: 'Failed to verify access code' });
+  }
+});
+
 // Logout (client-side token removal)
 router.post('/logout', (req, res) => {
   res.json({ message: 'Logout successful' });

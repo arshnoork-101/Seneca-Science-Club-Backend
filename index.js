@@ -7,13 +7,13 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://senecascienceclub.com'] 
+    ? ['https://your-vercel-frontend-url.vercel.app', 'https://senecascienceclub.com'] 
     : ['http://localhost:4200', 'http://localhost:3000'],
   credentials: true
 }));
