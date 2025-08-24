@@ -1,38 +1,73 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { prisma } = require('../config/database');
-const auth = require('../middleware/auth');
+const fs = require('fs').promises;
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
+
+// File storage paths
+const BLOG_DATA_FILE = path.join(__dirname, '../data/blog-posts.json');
+const DATA_DIR = path.join(__dirname, '../data');
+
+// Ensure data directory exists
+async function ensureDataDir() {
+  try {
+    await fs.access(DATA_DIR);
+  } catch {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+  }
+}
+
+// Read blog posts from file
+async function readBlogPosts() {
+  try {
+    await ensureDataDir();
+    const data = await fs.readFile(BLOG_DATA_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    // If file doesn't exist, return empty array
+    return [];
+  }
+}
+
+// Write blog posts to file
+async function writeBlogPosts(posts) {
+  await ensureDataDir();
+  await fs.writeFile(BLOG_DATA_FILE, JSON.stringify(posts, null, 2));
+}
 
 // Get all published blog posts
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, tag } = req.query;
     
-    const where = { isPublished: true };
-    if (tag) where.tags = { has: tag };
+    let posts = await readBlogPosts();
     
-    const posts = await prisma.blogPost.findMany({
-      where,
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            lastName: true,
-            program: true
-          }
-        }
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: parseInt(limit),
-      skip: (parseInt(page) - 1) * parseInt(limit)
-    });
-
-    const total = await prisma.blogPost.count({ where });
+    // Filter published posts
+    posts = posts.filter(post => post.isPublished);
+    
+    // Filter by tag if provided
+    if (tag) {
+      posts = posts.filter(post => 
+        post.tags && (
+          (Array.isArray(post.tags) && post.tags.includes(tag)) ||
+          (typeof post.tags === 'string' && post.tags.includes(tag))
+        )
+      );
+    }
+    
+    // Sort by publishedAt desc
+    posts.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+    
+    // Pagination
+    const total = posts.length;
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedPosts = posts.slice(startIndex, endIndex);
 
     res.json({
-      posts,
+      posts: paginatedPosts,
       pagination: {
         current: parseInt(page),
         total: Math.ceil(total / parseInt(limit)),
@@ -51,19 +86,8 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const post = await prisma.blogPost.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            lastName: true,
-            program: true,
-            year: true
-          }
-        }
-      }
-    });
+    const posts = await readBlogPosts();
+    const post = posts.find(p => p.id === id);
 
     if (!post || !post.isPublished) {
       return res.status(404).json({ error: 'Blog post not found' });
@@ -77,7 +101,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new blog post (Authenticated users)
-router.post('/', auth, [
+router.post('/', [
   body('title').trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),
   body('content').trim().isLength({ min: 100 }).withMessage('Content must be at least 100 characters'),
   body('excerpt').trim().isLength({ min: 20, max: 300 }).withMessage('Excerpt must be 20-300 characters'),
@@ -91,19 +115,29 @@ router.post('/', auth, [
 
     const { title, content, excerpt, tags, imageUrl } = req.body;
     
-    const post = await prisma.blogPost.create({
-      data: {
-        title,
-        content,
-        excerpt,
-        tags,
-        imageUrl,
-        authorId: req.user.id,
-        isPublished: req.user.role === 'ADMIN' // Auto-publish for admins
-      }
-    });
+    const posts = await readBlogPosts();
+    const newPost = {
+      id: uuidv4(),
+      title,
+      content,
+      excerpt,
+      tags,
+      imageUrl,
+      author: {
+        firstName: 'Admin',
+        lastName: 'User',
+        program: 'Science Club'
+      },
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-    res.status(201).json(post);
+    posts.push(newPost);
+    await writeBlogPosts(posts);
+
+    res.status(201).json(newPost);
   } catch (error) {
     console.error('Error creating blog post:', error);
     res.status(500).json({ error: 'Failed to create blog post' });
@@ -115,8 +149,12 @@ router.post('/simple', [
   body('title').trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),
   body('content').trim().isLength({ min: 10 }).withMessage('Content must be at least 10 characters'),
   body('excerpt').trim().isLength({ min: 10, max: 300 }).withMessage('Excerpt must be 10-300 characters'),
-  body('tags').isArray({ min: 1 }).withMessage('At least one tag is required'),
-  body('author').notEmpty().withMessage('Author is required'),
+  body('tags').optional(),
+  body('author').custom((value) => {
+    if (typeof value === 'string' && value.trim().length > 0) return true;
+    if (typeof value === 'object' && value.firstName && value.firstName.trim().length > 0) return true;
+    throw new Error('Author is required');
+  }),
   body('accessCode').notEmpty().withMessage('Access code is required')
 ], async (req, res) => {
   try {
@@ -138,61 +176,40 @@ router.post('/simple', [
       ? author 
       : { firstName: author.split(' ')[0] || 'Anonymous', lastName: author.split(' ').slice(1).join(' ') || '' };
 
-    // Create a default user if none exists (for simplified posting)
-    let defaultUser = await prisma.user.findFirst({
-      where: { email: 'mentor@ssc.com' }
-    });
-
-    if (!defaultUser) {
-      defaultUser = await prisma.user.create({
-        data: {
-          firstName: authorParts.firstName,
-          lastName: authorParts.lastName,
-          email: 'mentor@ssc.com',
-          senecaId: 'MENTOR001',
-          program: 'Science Club',
-          year: 1,
-          password: 'placeholder',
-          role: 'ADMIN',
-          isActive: true
-        }
-      });
-    }
-
-    const post = await prisma.blogPost.create({
-      data: {
-        title,
-        content,
-        excerpt,
-        tags,
-        imageUrl,
-        authorId: defaultUser.id,
-        isPublished: true,
-        publishedAt: new Date()
+    const posts = await readBlogPosts();
+    const newPost = {
+      id: uuidv4(),
+      title,
+      content,
+      excerpt,
+      tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(t => t.trim()) : []),
+      imageUrl,
+      author: {
+        firstName: authorParts.firstName,
+        lastName: authorParts.lastName,
+        program: 'Science Club'
       },
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            lastName: true,
-            program: true
-          }
-        }
-      }
-    });
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-    res.status(201).json(post);
+    posts.push(newPost);
+    await writeBlogPosts(posts);
+
+    res.status(201).json(newPost);
   } catch (error) {
     console.error('Error creating blog post:', error);
     res.status(500).json({ error: 'Failed to create blog post' });
   }
 });
 
-// Update blog post (Author or Admin)
-router.put('/:id', auth, [
+// Update blog post
+router.put('/:id', [
   body('title').optional().trim().isLength({ min: 5, max: 200 }).withMessage('Title must be 5-200 characters'),
-  body('content').optional().trim().isLength({ min: 100 }).withMessage('Content must be at least 100 characters'),
-  body('excerpt').optional().trim().isLength({ min: 20, max: 300 }).withMessage('Excerpt must be 20-300 characters')
+  body('content').optional().trim().isLength({ min: 10 }).withMessage('Content must be at least 10 characters'),
+  body('excerpt').optional().trim().isLength({ min: 10, max: 300 }).withMessage('Excerpt must be 10-300 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -201,52 +218,41 @@ router.put('/:id', auth, [
     }
 
     const { id } = req.params;
-    
-    // Check if user can edit this post
-    const existingPost = await prisma.blogPost.findUnique({
-      where: { id },
-      select: { authorId: true }
-    });
+    const posts = await readBlogPosts();
+    const postIndex = posts.findIndex(p => p.id === id);
 
-    if (!existingPost) {
+    if (postIndex === -1) {
       return res.status(404).json({ error: 'Blog post not found' });
     }
 
-    if (existingPost.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Not authorized to edit this post' });
-    }
+    // Update the post
+    posts[postIndex] = {
+      ...posts[postIndex],
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
 
-    const post = await prisma.blogPost.update({
-      where: { id },
-      data: req.body
-    });
-
-    res.json(post);
+    await writeBlogPosts(posts);
+    res.json(posts[postIndex]);
   } catch (error) {
     console.error('Error updating blog post:', error);
     res.status(500).json({ error: 'Failed to update blog post' });
   }
 });
 
-// Delete blog post (Author or Admin)
-router.delete('/:id', auth, async (req, res) => {
+// Delete blog post
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const existingPost = await prisma.blogPost.findUnique({
-      where: { id },
-      select: { authorId: true }
-    });
+    const posts = await readBlogPosts();
+    const postIndex = posts.findIndex(p => p.id === id);
 
-    if (!existingPost) {
+    if (postIndex === -1) {
       return res.status(404).json({ error: 'Blog post not found' });
     }
 
-    if (existingPost.authorId !== req.user.id && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Not authorized to delete this post' });
-    }
-
-    await prisma.blogPost.delete({ where: { id } });
+    posts.splice(postIndex, 1);
+    await writeBlogPosts(posts);
 
     res.json({ message: 'Blog post deleted successfully' });
   } catch (error) {
@@ -255,25 +261,28 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Publish/Unpublish blog post (Admin only)
-router.patch('/:id/publish', auth, async (req, res) => {
+// Publish/Unpublish blog post
+router.patch('/:id/publish', async (req, res) => {
   try {
-    if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
     const { id } = req.params;
     const { isPublished } = req.body;
+    
+    const posts = await readBlogPosts();
+    const postIndex = posts.findIndex(p => p.id === id);
 
-    const post = await prisma.blogPost.update({
-      where: { id },
-      data: {
-        isPublished,
-        publishedAt: isPublished ? new Date() : null
-      }
-    });
+    if (postIndex === -1) {
+      return res.status(404).json({ error: 'Blog post not found' });
+    }
 
-    res.json(post);
+    posts[postIndex] = {
+      ...posts[postIndex],
+      isPublished,
+      publishedAt: isPublished ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString()
+    };
+
+    await writeBlogPosts(posts);
+    res.json(posts[postIndex]);
   } catch (error) {
     console.error('Error updating blog post status:', error);
     res.status(500).json({ error: 'Failed to update blog post status' });
@@ -283,13 +292,14 @@ router.patch('/:id/publish', auth, async (req, res) => {
 // Get blog post tags
 router.get('/tags/all', async (req, res) => {
   try {
-    const posts = await prisma.blogPost.findMany({
-      where: { isPublished: true },
-      select: { tags: true }
-    });
+    const posts = await readBlogPosts();
+    const publishedPosts = posts.filter(post => post.isPublished);
 
-    const allTags = posts.flatMap(post => post.tags);
-    const uniqueTags = [...new Set(allTags)];
+    const allTags = publishedPosts.flatMap(post => 
+      Array.isArray(post.tags) ? post.tags : 
+      (typeof post.tags === 'string' ? post.tags.split(',').map(t => t.trim()) : [])
+    );
+    const uniqueTags = [...new Set(allTags)].filter(tag => tag && tag.length > 0);
 
     res.json(uniqueTags);
   } catch (error) {

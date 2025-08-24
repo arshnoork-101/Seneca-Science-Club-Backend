@@ -1,0 +1,114 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "title": "Welcome to Seneca Science Club",
+    "content": "Welcome to the official blog of Seneca Science Club! We are excited to share our journey, discoveries, and scientific adventures with you. Our club is dedicated to fostering a love for science among students at Seneca College. Through hands-on experiments, engaging workshops, and collaborative research projects, we aim to make science accessible and exciting for everyone. Whether you're a seasoned scientist or just curious about the world around you, there's a place for you in our community. Join us as we explore the wonders of physics, chemistry, biology, and beyond. Together, we'll push the boundaries of knowledge and inspire the next generation of scientific minds.",
+    "excerpt": "Welcome to the official blog of Seneca Science Club! Join us on our scientific journey.",
+    "tags": [
+      "welcome",
+      "introduction",
+      "science",
+      "community"
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800",
+    "author": {
+      "firstName": "Oakar",
+      "lastName": "President",
+      "program": "Science Club"
+    },
+    "isPublished": true,
+    "publishedAt": "2025-08-20T10:00:00.000Z",
+    "createdAt": "2025-08-20T10:00:00.000Z",
+    "updatedAt": "2025-08-20T10:00:00.000Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "title": "Exploring Quantum Physics: A Beginner's Guide",
+    "content": "Quantum physics might seem intimidating, but it's one of the most fascinating areas of science! In this article, we'll break down the fundamental concepts that govern the quantum world. From wave-particle duality to quantum entanglement, we'll explore how particles behave at the smallest scales. Did you know that electrons can exist in multiple states simultaneously until observed? This phenomenon, called superposition, is just one of the mind-bending principles that make quantum physics so intriguing. We'll also discuss practical applications like quantum computing and quantum cryptography that are shaping our technological future. Join us as we demystify the quantum realm and discover how these tiny particles are revolutionizing our understanding of reality.",
+    "excerpt": "Dive into the fascinating world of quantum physics with our beginner-friendly guide to quantum mechanics.",
+    "tags": [
+      "quantum",
+      "physics",
+      "science",
+      "education"
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800",
+    "author": {
+      "firstName": "Arshnoor",
+      "lastName": "Kaur",
+      "program": "Science Club"
+    },
+    "isPublished": true,
+    "publishedAt": "2025-08-21T14:30:00.000Z",
+    "createdAt": "2025-08-21T14:30:00.000Z",
+    "updatedAt": "2025-08-21T14:30:00.000Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "title": "Chemistry Lab Safety: Essential Guidelines",
+    "content": "Safety in the chemistry lab is paramount for every scientist, whether you're a student or a professional researcher. In this comprehensive guide, we'll cover the essential safety protocols that every lab user must know. From proper handling of chemicals to emergency procedures, we'll ensure you're well-prepared for safe laboratory work. Always wear appropriate personal protective equipment (PPE) including safety goggles, lab coats, and closed-toe shoes. Understand the location and proper use of safety equipment like eyewash stations, safety showers, and fire extinguishers. Proper chemical storage and disposal are crucial for maintaining a safe environment. Never mix chemicals without understanding their reactions, and always work in well-ventilated areas. Remember, a safe lab is a productive lab, and following these guidelines protects not just you, but everyone around you.",
+    "excerpt": "Learn essential chemistry lab safety guidelines to ensure a secure and productive research environment.",
+    "tags": [
+      "chemistry",
+      "safety",
+      "laboratory",
+      "guidelines"
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800",
+    "author": {
+      "firstName": "Majo",
+      "lastName": "Mostajo",
+      "program": "Science Club"
+    },
+    "isPublished": true,
+    "publishedAt": "2025-08-22T09:15:00.000Z",
+    "createdAt": "2025-08-22T09:15:00.000Z",
+    "updatedAt": "2025-08-22T09:15:00.000Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "title": "The Future of Renewable Energy",
+    "content": "As climate change continues to challenge our planet, renewable energy sources are becoming increasingly important. Solar, wind, hydroelectric, and geothermal energy offer sustainable alternatives to fossil fuels. Recent technological advances have made renewable energy more efficient and cost-effective than ever before. Solar panel efficiency has improved dramatically, while wind turbines are generating more power with innovative designs. Energy storage solutions like advanced batteries are solving the intermittency challenges of renewable sources. Smart grids are optimizing energy distribution, and emerging technologies like hydrogen fuel cells promise even cleaner energy solutions. The transition to renewable energy isn't just about environmental protection—it's about creating a sustainable future for generations to come. Join us as we explore the cutting-edge technologies that are powering our planet's green revolution.",
+    "excerpt": "Discover the latest advances in renewable energy technology and their impact on our sustainable future.",
+    "tags": [
+      "renewable",
+      "energy",
+      "sustainability",
+      "technology"
+    ],
+    "imageUrl": "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800",
+    "author": {
+      "firstName": "Science",
+      "lastName": "Team",
+      "program": "Science Club"
+    },
+    "isPublished": true,
+    "publishedAt": "2025-08-23T16:45:00.000Z",
+    "createdAt": "2025-08-23T16:45:00.000Z",
+    "updatedAt": "2025-08-23T16:45:00.000Z"
+  },
+  {
+    "id": "45acc9ac-eaf1-4526-b01c-ba459603779f",
+    "title": "Mitochondria: The Powerhouse of the Cell and Beyond",
+    "content": "Mitochondria are tiny organelles with an outsized role in life. Commonly known as the \"powerhouses of the cell,\" they generate ATP, the essential energy currency that fuels nearly every cellular process. Their double-membrane structure allows for efficient oxidative phosphorylation, while their own DNA reflects an evolutionary history as once free-living bacteria. Beyond energy production, mitochondria regulate programmed cell death (apoptosis), balance calcium levels, and even contribute to heat generation in brown fat. Malfunctioning mitochondria are linked to devastating diseases such as Parkinson’s, Alzheimer’s, and metabolic disorders. Over time, mitochondrial DNA accumulates damage, fueling theories about their role in aging. Fascinatingly, mitochondrial DNA is also used to trace human evolution, offering a genetic time machine into our past. In short, mitochondria are not just engines of energy but central players in health, disease, and the story of life itself.",
+    "excerpt": "Mitochondria are more than cellular powerhouses. They produce energy, regulate cell death, store calcium, and even reveal secrets of human evolution and aging.",
+    "tags": [
+      "Biology",
+      "Mitochondria",
+      "Cell Biology",
+      "Evolution",
+      "Health",
+      "Science"
+    ],
+    "imageUrl": "",
+    "author": {
+      "firstName": "Arshnoor",
+      "lastName": "Kaur",
+      "program": "Science Club"
+    },
+    "isPublished": true,
+    "publishedAt": "2025-08-24T01:53:18.034Z",
+    "createdAt": "2025-08-24T01:53:18.034Z",
+    "updatedAt": "2025-08-24T01:53:18.034Z"
+  }
+]
